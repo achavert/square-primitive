@@ -230,7 +230,7 @@ def add_sub_aqft(_circ, ctrl, a, b, **kargs):
     aqft(_circ, b, delta)
 
     if parallel:
-        for _l in range(min(len(a), delta)):                  
+        for _l in range(min(len(a), delta + 1)):                  
             for _i in range(min(len(b), len(a) - _l)):        
                 _ctrl = a[len(a)-1 - (_i + _l)]               
                 _targ = b[len(b)-1 - _i]                      
@@ -240,7 +240,7 @@ def add_sub_aqft(_circ, ctrl, a, b, **kargs):
     else:
         for _l in range(len(b)):
             _targ = b[len(b)-1 - _l]
-            for _k in range(0, min(len(a) - _l, delta)):
+            for _k in range(0, min(len(a) - _l, delta+1)):
                 _ctrl = a[len(a)-1 - _l - _k] 
                 theta = np.pi / 2**_k
                 _circ.add(qibo.gates.CU1(_ctrl, _targ, theta))
@@ -318,7 +318,7 @@ def ctrl_add(_circ, ctrl, a, b):
 # ----------------------------------------------------------------
 # Non-restoring SQRT steps
 # ----------------------------------------------------------------
-def initial_substraction(_circ, n, allocs, method = 'input_carry', **kargs): # Phase 1
+def initial_substraction(_circ, n, allocs, method, **kargs): # Phase 1
     R, F, Z  = allocs
 
     ''' Overflow bugged circuit
@@ -356,7 +356,7 @@ def initial_substraction(_circ, n, allocs, method = 'input_carry', **kargs): # P
 
 
 
-def conditional_add_sub(_circ, n, it, allocs, method = 'input_carry', **kargs): # Phase 2 iteration
+def conditional_add_sub(_circ, n, it, allocs, method, **kargs): # Phase 2 iteration
     R, F, Z  = allocs
 
     # Step 1
