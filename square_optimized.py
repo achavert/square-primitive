@@ -4,14 +4,12 @@ Register layout, with n=2*m (m = number of bits of the input x):
 
     R: n qubits -> holds x**2 at the end
     F: n qubits -> "root" register, its logical order is permuted while the sqrt runs
-    Z: 1 qubit  -> sing/control qubit
 
-Total qubits: 2*n + 1 = 4*m +1 
+Total qubits: 2*n  = 4*m
 '''
-import numpy as np
+
 import qibo
 
-ADD_SUB_METHODS = ('ripple_input_carry', 'ripple_no_input_carry', 'aqft')
 
 
 
@@ -19,7 +17,7 @@ ADD_SUB_METHODS = ('ripple_input_carry', 'ripple_no_input_carry', 'aqft')
 def Square_opt(m, allocs = None, input_swaps = False) -> qibo.Circuit:
     '''Builds the circuit that maps 
             |x>|0>...|0>    ->  |x**2>|0>...|0>
-    Returns (circuit, (R,F,Z)). The returned F is the final layout of the sqrt, which is where the input must be loaded:
+    Returns (circuit, (R,F)). The returned F is the final layout of the sqrt, which is where the input must be loaded:
 
         - input_swaps=False: load x directly on F[2:m+2] from the returned allocs.
         - input_swaps=True: load x on R[0:m], the circuits moves it to F with m extra SWAPs
@@ -44,7 +42,7 @@ def Square_opt(m, allocs = None, input_swaps = False) -> qibo.Circuit:
 
 
 def sqrt_circ(n, allocs) -> qibo.Circuit:
-    ''' Non-restoring sqrt of an n-bit number. Returns (circuit, (R,F,Z)).
+    ''' Non-restoring sqrt of an n-bit number. Returns (circuit, (R,F)).
 
     The input 'allocs' is not modified, the returned F holds the final layout.
     '''
@@ -209,17 +207,19 @@ def ctrl_add(_circ, ctrl, a, b):
 def initial_substraction(_circ, n, allocs): # Phase 1
     R, F = allocs
 
-    # Overflow bug fix
+    # Corrected control computation
     _circ.add(qibo.gates.CNOT(R[n-1], F[2]))
     _circ.add(qibo.gates.CNOT(R[n-2], F[2]))
     _circ.add(qibo.gates.TOFFOLI(R[n-1], R[n-2], F[2]))
 
+    # Initial subtraction computation
     _circ.add(qibo.gates.X(R[n-2]))
     _circ.add(qibo.gates.CNOT(R[n-2], R[n-1]))
 
+    # Bit inversion for F1 (F2 and F1 are always opposites)
     invCNOT(_circ, F[2], F[1])
 
-    # Step 6
+    # Step 4 (j=1 conditional ADD/SUB)
     a = F[:4]
     b = R[n - 4:n]
     _add_sub(_circ, F[2], a, b)
@@ -232,18 +232,17 @@ def conditional_add_sub(_circ, n, it, allocs): # Phase 2 iteration
     # Step 1
     invCNOT(_circ, F[2], F[1])
 
-    # Step 3
+    # Step 2
     _circ.add(qibo.gates.CNOT(R[n-1], F[1]))
 
-    # Step 5
+    # Step 3
     invCNOT(_circ, R[n-1], F[it+1])
 
-    # Step 6
+    # Step 4
     for j in range(it+1,2,-1):
-        #_circ.add(qibo.gates.SWAP(F[j], F[j-1]))
-        F = swap_allocs(j, j-1, F)
+        F = swap_allocs(j, j-1, F) #_circ.add(qibo.gates.SWAP(F[j], F[j-1]))
     
-    # Step 7
+    # Step 5
     a = F[:2 * it + 2]
     b = R[n - 2 * it - 2:n]
     _add_sub(_circ, F[2], a, b)
@@ -255,18 +254,16 @@ def remainder_restorarion(_circ, n, allocs): # Phase 3
     # Step 1
     invCNOT(_circ, F[2], F[1])
 
-    # Step 4
+    # Step 2
     invCNOT(_circ, R[n-1], F[n//2+1])
 
-
-    # Step 6
+    # Step 3
     ctrl_add(_circ, ctrl=R[n-1], a=F[:n-1], b=R[:n-1])
 
     # Step 4
     invCNOT(_circ, F[n//2+1], R[n-1])
 
-
-    # Step 8
+    # Step 5
     for j in range(n//2+1, 2, -1):
         #_circ.add(qibo.gates.SWAP(F[j], F[j-1]))
         F = swap_allocs(j, j-1, F)
