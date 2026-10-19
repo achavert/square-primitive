@@ -27,10 +27,10 @@ def Square_opt(m, allocs = None, input_swaps = False) -> qibo.Circuit:
     The result x**2 is always on R[0:n], in little-endian configuration (least-significant bit on R[0]).     
     '''
     n = 2 * m
-    nqubits = 2 * n + 1
+    nqubits = 2 * n
 
-    R, F, Z = get_allocs(n) if allocs is None else allocs
-    sqrt_qc, (R, F, Z) = sqrt_circ(n, (R, F, Z))
+    R, F = get_allocs(n) if allocs is None else allocs
+    sqrt_qc, (R, F) = sqrt_circ(n, (R, F))
     inv_sqrt_qc = sqrt_qc.invert()
 
     _qc = qibo.Circuit(nqubits)
@@ -40,23 +40,23 @@ def Square_opt(m, allocs = None, input_swaps = False) -> qibo.Circuit:
     _qc.add(qibo.gates.X(F[0]))
     _qc.add(inv_sqrt_qc.on_qubits(*range(nqubits)))
     _qc.add(qibo.gates.X(F[0]))
-    return _qc, (R, F, Z)
+    return _qc, (R, F)
 
 
-def sqrt_circ(n, allocs, method = 'ripple_input_carry', **kargs) -> qibo.Circuit:
+def sqrt_circ(n, allocs) -> qibo.Circuit:
     ''' Non-restoring sqrt of an n-bit number. Returns (circuit, (R,F,Z)).
 
     The input 'allocs' is not modified, the returned F holds the final layout.
     '''
-    R, F, Z = allocs; F = list(F)
-    nqubits = 2 * n +1
+    R, F = allocs; F = list(F)
+    nqubits = 2 * n 
     _qc_sqrt = qibo.Circuit(nqubits)
 
-    initial_substraction(_qc_sqrt, n, (R, F, Z))
+    initial_substraction(_qc_sqrt, n, (R, F))
     for it in range(2, n//2):
-        conditional_add_sub(_qc_sqrt, n, it, (R, F, Z))
-    remainder_restorarion(_qc_sqrt, n, (R, F, Z))
-    return _qc_sqrt, (R, F, Z)
+        conditional_add_sub(_qc_sqrt, n, it, (R, F))
+    remainder_restorarion(_qc_sqrt, n, (R, F))
+    return _qc_sqrt, (R, F)
 
 
 def initialize_square(x, m, allocs = None, direct = False) -> qibo.Circuit:
@@ -69,8 +69,8 @@ def initialize_square(x, m, allocs = None, direct = False) -> qibo.Circuit:
     if direct and allocs is None:
         raise ValueError("direct=True needs the allocs returned by Square")
 
-    n = 2 * m; nqubits = 2*n + 1
-    R, F, Z =get_allocs(n) if allocs is None else allocs
+    n = 2 * m; nqubits = 2*n 
+    R, F = get_allocs(n) if allocs is None else allocs
     register = F[2:m+2] if direct else R[:m]
 
     init_circ = qibo.Circuit(nqubits)
@@ -86,12 +86,10 @@ def get_allocs(n):
     ''' Default initial allocations for the circuit:
     R: range(0, n)
     F: range(n, 2 * n)  -> prior to the permutations performed by Square
-    Z: 2 * n
     '''
     R = list(range(0, n))             
-    F = list(range(n, 2 * n))        
-    Z = 2 * n    
-    return R, F, Z    
+    F = list(range(n, 2 * n))         
+    return R, F   
 
 def swap_allocs(_p, _q, _allocs):
     ''' Label reallocation of the registers to reduce SWAP count.'''
@@ -209,7 +207,7 @@ def ctrl_add(_circ, ctrl, a, b):
 # Non-restoring SQRT steps
 # ----------------------------------------------------------------
 def initial_substraction(_circ, n, allocs): # Phase 1
-    R, F, Z  = allocs
+    R, F = allocs
 
     # Overflow bug fix
     _circ.add(qibo.gates.CNOT(R[n-1], F[2]))
@@ -229,7 +227,7 @@ def initial_substraction(_circ, n, allocs): # Phase 1
 
 
 def conditional_add_sub(_circ, n, it, allocs): # Phase 2 iteration
-    R, F, Z  = allocs
+    R, F  = allocs
 
     # Step 1
     invCNOT(_circ, F[2], F[1])
@@ -252,33 +250,26 @@ def conditional_add_sub(_circ, n, it, allocs): # Phase 2 iteration
 
 
 def remainder_restorarion(_circ, n, allocs): # Phase 3
-    R, F, Z  = allocs
-
-
+    R, F  = allocs
 
     # Step 1
     invCNOT(_circ, F[2], F[1])
 
-    # Step 3
-    invCNOT(_circ, R[n-1], Z)
-
     # Step 4
     invCNOT(_circ, R[n-1], F[n//2+1])
 
-    # Step 5
-    _circ.add(qibo.gates.X(Z))
 
     # Step 6
-    ctrl_add(_circ, ctrl=Z, a=F, b=R)
+    ctrl_add(_circ, ctrl=R[n-1], a=F[:n-1], b=R[:n-1])
 
-    # Step 7
-    _circ.add(qibo.gates.X(Z))
+    # Step 4
+    invCNOT(_circ, F[n//2+1], R[n-1])
+
 
     # Step 8
     for j in range(n//2+1, 2, -1):
         #_circ.add(qibo.gates.SWAP(F[j], F[j-1]))
         F = swap_allocs(j, j-1, F)
 
-    # Step 9
-    _circ.add(qibo.gates.CNOT(F[2], Z))
+
 
