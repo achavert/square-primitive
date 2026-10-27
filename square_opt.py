@@ -125,9 +125,14 @@ def invCNOT(_circ, ctrl, target):
 # ----------------------------------------------------------------
 
 def add_sub_no_input_carry(_circ, ctrl, a, b): # 
-    '''Ripple carry adder with no input carry bit.'''
+    '''Optimized ripple carry adder with no input carry bit.
+        This implementation assumes different lengths for both operands:
+            - len(b) = N
+            - len(a) = N-1
+        due to the fact that F[N-1] is always zero by the theoretical bounds (R -> it+3, F-> it+2).
+        Furthermore, register F[0]=a0 is assumed to be 1, by construction of the circuit. This eliminates its controlled over Toffolis and CNOTs.
+    '''
 
-    # This ripple-carry adder implementation assumes a different length for both operands, as a0 is known to always be one, thus F0 = None 
     N = len(b)
     assert len(a) == N-1
 
@@ -135,11 +140,10 @@ def add_sub_no_input_carry(_circ, ctrl, a, b): #
     for j in range(N):
         _circ.add(qibo.gates.CNOT(ctrl, b[j]))
 
-    _circ.add(qibo.gates.CNOT(a[N-2], b[N-1]))
-
     # Block 1
     for j in range(len(a)-1):
         _circ.add(qibo.gates.CNOT(a[j+1], b[j+1]))
+    _circ.add(qibo.gates.CNOT(a[N-2], b[N-1])) # 
 
     # Block 2 
     for j in range(len(a)-2):
