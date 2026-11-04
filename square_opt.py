@@ -187,34 +187,37 @@ def _add_sub(_circ, ctrl, a, b):
 # ----------------------------------------------------------------
 def ctrl_add(_circ, ctrl, a, b):
     # Block 1
-    for i in range(len(b)-1):
-        _circ.add(qibo.gates.CNOT(a[i+1], b[i+1]))
+    for i in range(len(b)-2): # Removed first a1=0
+        _circ.add(qibo.gates.CNOT(a[i+2], b[i+2]))
 
     # Block 2
-    for i in range(len(a)-2):
+    for i in range(len(a)-3) : # Removed last a1=0
         indx = len(a) - 1 - i
         _circ.add(qibo.gates.CNOT(a[indx-1], a[indx]))
 
     # Block 3
-    _circ.add(qibo.gates.CNOT(b[0], a[1])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
-    for i in range(len(a)-2):
-        _circ.add(qibo.gates.TOFFOLI(a[i+1], b[i+1], a[i+2])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
+    #_circ.add(qibo.gates.CNOT(b[0], a[1])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
+    _circ.add(qibo.gates.TOFFOLI(b[0], b[1], a[2]))
+    for i in range(len(a)-3):
+        _circ.add(qibo.gates.TOFFOLI(a[i+2], b[i+2], a[i+3])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
 
-    for i in range(len(b)-2):
+    for i in range(len(b)-3):
         indx = len(b) - 1 - i
         _circ.add(qibo.gates.TOFFOLI(ctrl, a[indx], b[indx]))
         _circ.add(qibo.gates.TOFFOLI(b[indx-1] , a[indx-1], a[indx]))
-    _circ.add(qibo.gates.TOFFOLI(ctrl, a[1], b[1]))
-    _circ.add(qibo.gates.CNOT(b[0], a[1])) # Changed Tofolli with control on a0=F[0]=1 for a CNOT
+    _circ.add(qibo.gates.TOFFOLI(ctrl, a[2], b[2]))
+    _circ.add(qibo.gates.TOFFOLI(b[0] , b[1], a[2]))
+    
+    _circ.add(qibo.gates.TOFFOLI(ctrl, b[0], b[1]))
     _circ.add(qibo.gates.CNOT(ctrl, b[0])) # Changed Tofolli with control on a0=F[0]=1 for a CNOT
 
     # Block 5
-    for i in range(len(b)-2):
-        _circ.add(qibo.gates.CNOT(a[i+1], a[i+2]))
+    for i in range(len(b)-3):
+        _circ.add(qibo.gates.CNOT(a[i+2], a[i+3]))
 
     # Block 6
-    for i in range(len(b)-1):
-            _circ.add(qibo.gates.CNOT(a[i+1], b[i+1]))
+    for i in range(len(b)-2):
+            _circ.add(qibo.gates.CNOT(a[i+2], b[i+2]))
 
 
 # ----------------------------------------------------------------
