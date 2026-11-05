@@ -123,13 +123,12 @@ def invCNOT(_circ, ctrl, target):
 # ----------------------------------------------------------------
 # Conditional ADD/SUB (b -> b +/- a, selected by ctrl)
 # ----------------------------------------------------------------
-
+from qibo import gates
 def add_sub_no_input_carry(_circ, ctrl, a, b):
-    '''Optimized ripple carry adder with no input carry bit.
-        - len(b) = N, len(a) = N-1 (F[N-1] is always zero by the theoretical bounds).
-        - F[0]=a[0]=1 by construction (no qubit/gates needed for it).
-        - F[1] = NOT F[2]: a[1] is NOT used (pass None). The qubit q=a[2] encodes
-          the pair (F1,F2): it plays the role of F2 outside Blocks 2-4 and of F1 in between.
+    '''Optimized ripple carry adder with no input carry bit (n+1 / 2m+1 version).
+        - len(b) = N, len(a) = N-1 (F[N-1] is always zero by theoretical bounds).
+        - F[0]=a[0]=1 and F[1]=NOT F[2] are virtualized (a[1] is not used / None).
+        - The qubit q = a[2] encodes F2 and its negation handles F1.
         Requires N >= 4.
     '''
     N = len(b)
@@ -137,70 +136,72 @@ def add_sub_no_input_carry(_circ, ctrl, a, b):
     q = a[2]
  
     def a2_toffoli(t):                 
-        _circ.add(qibo.gates.CNOT(b[2], t))
-        _circ.add(qibo.gates.X(t).controlled_by(b[1], b[2], q))
+        _circ.add(gates.CNOT(b[2], t))
+        # Puerta C3X (Toffoli con 3 controles: b[1], b[2], q) para el caso n+1
+        _circ.add(gates.X(t).controlled_by(b[1], b[2], q))
  
     def a2_cnot_b2():                 
-        _circ.add(qibo.gates.X(b[2]))
-        _circ.add(qibo.gates.TOFFOLI(b[1], q, b[2]))
+        _circ.add(gates.X(b[2]))
+        _circ.add(gates.TOFFOLI(b[1], q, b[2]))
  
     # Control operation
     for j in range(N):
-        _circ.add(qibo.gates.CNOT(ctrl, b[j]))
+        _circ.add(gates.CNOT(ctrl, b[j]))
  
     # Block 1
-    _circ.add(qibo.gates.X(b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[2]))
+    _circ.add(gates.X(b[1]))
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.CNOT(q, b[2]))
     for j in range(len(a)-3):
-        _circ.add(qibo.gates.CNOT(a[j+3], b[j+3]))
-    _circ.add(qibo.gates.CNOT(a[N-2], b[N-1]))
- 
+        _circ.add(gates.CNOT(a[j+3], b[j+3]))
+    _circ.add(gates.CNOT(a[N-2], b[N-1]))
+
     # Block 2
     for j in range(len(a)-3):
         indx = len(a) - 1 - j
-        _circ.add(qibo.gates.CNOT(a[indx-1], a[indx]))
-    _circ.add(qibo.gates.X(q))
- 
+        _circ.add(gates.CNOT(a[indx-1], a[indx]))
+    _circ.add(gates.X(q))
+
     # Block 3
-    _circ.add(qibo.gates.CNOT(b[0], q))
+    _circ.add(gates.CNOT(b[0], q))
     if N == 4:
         a2_toffoli(b[3])
     else:
         a2_toffoli(a[3])
         for j in range(len(a)-4):
-            _circ.add(qibo.gates.TOFFOLI(b[j+3], a[j+3], a[j+4]))
-        _circ.add(qibo.gates.TOFFOLI(b[N-2], a[N-2], b[N-1]))
- 
+            _circ.add(gates.TOFFOLI(b[j+3], a[j+3], a[j+4]))
+        _circ.add(gates.TOFFOLI(b[N-2], a[N-2], b[N-1]))
+
     # Block 4
     if N == 4:
         a2_cnot_b2()
     else:
-        _circ.add(qibo.gates.CNOT(a[N-2], b[N-2]))
+        _circ.add(gates.CNOT(a[N-2], b[N-2]))
         for j in range(len(a)-4):
             indx = len(a) - 1 - j
+            # Asumiendo que Peres está definida en el contexto del módulo
             Peres(_circ, a[indx-1], b[indx-1], a[indx])
         a2_toffoli(a[3])
         a2_cnot_b2()
-    _circ.add(qibo.gates.CNOT(q, b[1]))
-    _circ.add(qibo.gates.CNOT(b[0], q))
-    _circ.add(qibo.gates.X(b[0]))
-    _circ.add(qibo.gates.X(q))
- 
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.CNOT(b[0], q))
+    _circ.add(gates.X(b[0]))
+    _circ.add(gates.X(q))
+
     # Block 5
     for j in range(len(a)-3):
-        _circ.add(qibo.gates.CNOT(a[j+2], a[j+3]))
- 
-    # Block 6
-    _circ.add(qibo.gates.X(b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[2]))
-    for j in range(len(a)-3):
-        _circ.add(qibo.gates.CNOT(a[j+3], b[j+3]))
- 
+        _circ.add(gates.CNOT(a[j+2], a[j+3]))
+
+    # Block 6 (Inversión exacta y simétrica del Bloque 1 para n+1)
+    for j in reversed(range(len(a)-3)):
+        _circ.add(gates.CNOT(a[j+3], b[j+3]))
+    _circ.add(gates.CNOT(q, b[2]))
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.X(b[1]))
+
     # Undo control operation
     for j in range(N):
-        _circ.add(qibo.gates.CNOT(ctrl, b[j]))
+        _circ.add(gates.CNOT(ctrl, b[j]))
 
 
 def _add_sub(_circ, ctrl, a, b):
@@ -212,62 +213,38 @@ def _add_sub(_circ, ctrl, a, b):
 # Ctrl-ADD (b -> b + a if ctrl)
 # ----------------------------------------------------------------
 def ctrl_add(_circ, ctrl, a, b):
-    '''Controlled adder b += ctrl * F, with F[0]=a[0]=1 and F[1] = NOT F[2].
-    a[1] is NOT used (pass None); q=a[2] encodes (F1,F2).
-    '''
-    N = len(b)
-    assert len(a) == N and N >= 4
-    q = a[2]
-
     # Block 1
-    _circ.add(qibo.gates.X(b[1]))                 
-    _circ.add(qibo.gates.CNOT(q, b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[2]))
-    for i in range(len(b)-3):
-        _circ.add(qibo.gates.CNOT(a[i+3], b[i+3]))
+    for i in range(len(b)-2): # Removed first a1=0
+        _circ.add(qibo.gates.CNOT(a[i+2], b[i+2]))
 
-    # Block 2 
-    for i in range(len(a)-3):
+    # Block 2
+    for i in range(len(a)-3) : # Removed last a1=0
         indx = len(a) - 1 - i
         _circ.add(qibo.gates.CNOT(a[indx-1], a[indx]))
-    _circ.add(qibo.gates.X(q))                    
 
-    # Block 3: carries
-    _circ.add(qibo.gates.CNOT(b[0], q))           
+    # Block 3
+    #_circ.add(qibo.gates.CNOT(b[0], a[1])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
+    _circ.add(qibo.gates.TOFFOLI(b[0], b[1], a[2]))
+    for i in range(len(a)-3):
+        _circ.add(qibo.gates.TOFFOLI(a[i+2], b[i+2], a[i+3])) # Changed Toffoli gate with control in F[0]=1 for a CNOT
 
-    _circ.add(qibo.gates.CNOT(b[2], a[3]))
-    _circ.add(qibo.gates.X(a[3]).controlled_by(b[1], b[2], q))
-    for i in range(len(a)-4):
-        _circ.add(qibo.gates.TOFFOLI(a[i+3], b[i+3], a[i+4]))
-
-
-    for i in range(len(b)-4):                   
+    for i in range(len(b)-3):
         indx = len(b) - 1 - i
         _circ.add(qibo.gates.TOFFOLI(ctrl, a[indx], b[indx]))
-        _circ.add(qibo.gates.TOFFOLI(b[indx-1], a[indx-1], a[indx]))
- 
-    _circ.add(qibo.gates.TOFFOLI(ctrl, a[3], b[3]))
-    _circ.add(qibo.gates.CNOT(b[2], a[3]))
-    _circ.add(qibo.gates.X(a[3]).controlled_by(b[1], b[2], q))
- 
-    _circ.add(qibo.gates.CNOT(ctrl, b[2]))
-    _circ.add(qibo.gates.X(b[2]).controlled_by(ctrl, b[1], q))
-    _circ.add(qibo.gates.TOFFOLI(ctrl, q, b[1]))  #
-    _circ.add(qibo.gates.CNOT(b[0], q))           
-    _circ.add(qibo.gates.CNOT(ctrl, b[0]))      
-    _circ.add(qibo.gates.X(q))                  
+        _circ.add(qibo.gates.TOFFOLI(b[indx-1] , a[indx-1], a[indx]))
+    _circ.add(qibo.gates.TOFFOLI(ctrl, a[2], b[2]))
+    _circ.add(qibo.gates.TOFFOLI(b[0] , b[1], a[2]))
+    
+    _circ.add(qibo.gates.TOFFOLI(ctrl, b[0], b[1]))
+    _circ.add(qibo.gates.CNOT(ctrl, b[0])) # Changed Tofolli with control on a0=F[0]=1 for a CNOT
 
-    # Block 5 
+    # Block 5
     for i in range(len(b)-3):
         _circ.add(qibo.gates.CNOT(a[i+2], a[i+3]))
 
     # Block 6
-    _circ.add(qibo.gates.X(b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[1]))
-    _circ.add(qibo.gates.CNOT(q, b[2]))
-    for i in range(len(b)-3):
-        _circ.add(qibo.gates.CNOT(a[i+3], b[i+3]))
-
+    for i in range(len(b)-2):
+            _circ.add(qibo.gates.CNOT(a[i+2], b[i+2]))
 # ----------------------------------------------------------------
 # Non-restoring SQRT steps
 # ----------------------------------------------------------------
