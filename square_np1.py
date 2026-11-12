@@ -124,6 +124,9 @@ def invCNOT(_circ, ctrl, target):
 # Conditional ADD/SUB (b -> b +/- a, selected by ctrl)
 # ----------------------------------------------------------------
 from qibo import gates
+
+
+
 def add_sub_no_input_carry(_circ, ctrl, a, b):
     '''Optimized ripple carry adder with no input carry bit (n+1 / 2m+1 version).
         - len(b) = N, len(a) = N-1 (F[N-1] is always zero by theoretical bounds).
@@ -138,7 +141,8 @@ def add_sub_no_input_carry(_circ, ctrl, a, b):
     def a2_toffoli(t):                 
         _circ.add(gates.CNOT(b[2], t))
         # Puerta C3X (Toffoli con 3 controles: b[1], b[2], q) para el caso n+1
-        _circ.add(gates.X(t).controlled_by(b[1], b[2], q))
+        gate = gates.X(t).controlled_by(b[1], b[2], q)
+        _circ.add(gate)
  
     def a2_cnot_b2():                 
         _circ.add(gates.X(b[2]))
