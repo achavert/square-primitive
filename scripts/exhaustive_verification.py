@@ -1,6 +1,5 @@
 import time
 import sys
-
 from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -8,11 +7,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 import qibo
 import quantum_squaring.circuits.square_optimized as square_optimized
 
-qibo.set_backend("qibojit", platform="cuda")
+qibo.set_backend("qibojit", platform="cupy")
+qibo.set_device("/GPU:0")
 
 
 def run_circ(m, output_file):
-    num_qubits = 2*m + 2 # 
+    num_qubits = 2*m + 2 # Must match the circuit qubit requirements
     start = time.time()
     for x in range(2**m):
         sq, (R, F) = square_optimized.Square(m, input_swaps = False)
