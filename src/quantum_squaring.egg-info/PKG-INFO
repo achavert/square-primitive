@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: quantum-squaring
+Version: 0.1.0
+Summary: Quantum squaring circuit implementations and resource analysis
+Requires-Python: >=3.10
+License-File: LICENSE
+Dynamic: license-file

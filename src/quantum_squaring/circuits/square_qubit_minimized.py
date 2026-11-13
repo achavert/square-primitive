@@ -18,7 +18,7 @@ def get_allocs(n):
     F: F0 = None, F1 = n, F2 = n+1
     '''
     R = list(range(0, n))             
-    F = [None, n, n + 1] # [F0, F1, F2]         
+    F = [None, None, n] # [F0, F1, F2]         
     return R, F   
 
 
@@ -33,7 +33,7 @@ def Square(m, allocs = None, input_swaps = False) -> qibo.Circuit:
     The result x**2 is always on R[0:n], in little-endian configuration (least-significant bit on R[0]).     
     '''
     n = 2 * m
-    nqubits = n + 2
+    nqubits = n + 1
 
     R, F = get_allocs(n) if allocs is None else allocs
     sqrt_qc, (R, F) = sqrt_circ(n, (R, F))
@@ -55,7 +55,7 @@ def sqrt_circ(n, allocs) -> qibo.Circuit:
     The input 'allocs' is not modified, the returned F holds the final layout.
     '''
     R, F = allocs; F = list(F)
-    nqubits = n + 2
+    nqubits = n + 1
     _qc_sqrt = qibo.Circuit(nqubits)
 
     initial_substraction(_qc_sqrt, n, (R, F))
@@ -65,18 +65,18 @@ def sqrt_circ(n, allocs) -> qibo.Circuit:
     return _qc_sqrt, (R, F)
 
 
-def initialize_square(x, m, final_allocs = None, direct = False) -> qibo.Circuit:
+def initialize_square(x, m, allocs = None, direct = False) -> qibo.Circuit:
     ''' Circuit that loads the m-bit integer x (little-endian):
             - direct=False: onto R[0:m] (use with input_swaps=True).
             - direct=True:  onto F[2:m+2] of the final layout, allocs must be the ones returned by Square
     '''
     if not 0 <= x < 2**m:
         raise ValueError(f"x={x} does not fit in {m} bits")
-    if direct and final_allocs is None:
+    if direct and allocs is None:
         raise ValueError("direct=True needs the allocs returned by Square")
 
-    n = 2 * m; nqubits = n + 2
-    R, F = get_allocs(n) if final_allocs is None else final_allocs
+    n = 2 * m; nqubits = n + 1
+    R, F = get_allocs(n) if allocs is None else allocs
     register = F[2:m+2] if direct else R[:m]
 
     init_circ = qibo.Circuit(nqubits)
@@ -123,59 +123,90 @@ def invCNOT(_circ, ctrl, target):
 # ----------------------------------------------------------------
 # Conditional ADD/SUB (b -> b +/- a, selected by ctrl)
 # ----------------------------------------------------------------
+from qibo import gates
 
-def add_sub_no_input_carry(_circ, ctrl, a, b): # 
-    '''Optimized ripple carry adder with no input carry bit.
-        This implementation assumes different lengths for both operands:
-            - len(b) = N
-            - len(a) = N-1
-        due to the fact that F[N-1] is always zero by the theoretical bounds (R -> it+3, F-> it+2).
-        Furthermore, register F[0]=a0 is assumed to be 1, by construction of the circuit. This eliminates its controlled over Toffolis and CNOTs.
+
+
+def add_sub_no_input_carry(_circ, ctrl, a, b):
+    '''Optimized ripple carry adder with no input carry bit (n+1 / 2m+1 version).
+        - len(b) = N, len(a) = N-1 (F[N-1] is always zero by theoretical bounds).
+        - F[0]=a[0]=1 and F[1]=NOT F[2] are virtualized (a[1] is not used / None).
+        - The qubit q = a[2] encodes F2 and its negation handles F1.
+        Requires N >= 4.
     '''
-
     N = len(b)
-    assert len(a) == N-1
-
-    # Control operation 
+    assert len(a) == N-1 and N >= 4
+    q = a[2]
+ 
+    def a2_toffoli(t):                 
+        _circ.add(gates.CNOT(b[2], t))
+        # Puerta C3X (Toffoli con 3 controles: b[1], b[2], q) para el caso n+1
+        gate = gates.X(t).controlled_by(b[1], b[2], q)
+        _circ.add(gate)
+ 
+    def a2_cnot_b2():                 
+        _circ.add(gates.X(b[2]))
+        _circ.add(gates.TOFFOLI(b[1], q, b[2]))
+ 
+    # Control operation
     for j in range(N):
-        _circ.add(qibo.gates.CNOT(ctrl, b[j]))
-
+        _circ.add(gates.CNOT(ctrl, b[j]))
+ 
     # Block 1
-    for j in range(len(a)-1):
-        _circ.add(qibo.gates.CNOT(a[j+1], b[j+1]))
-    _circ.add(qibo.gates.CNOT(a[N-2], b[N-1])) # 
+    _circ.add(gates.X(b[1]))
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.CNOT(q, b[2]))
+    for j in range(len(a)-3):
+        _circ.add(gates.CNOT(a[j+3], b[j+3]))
+    _circ.add(gates.CNOT(a[N-2], b[N-1]))
 
-    # Block 2 
-    for j in range(len(a)-2):
+    # Block 2
+    for j in range(len(a)-3):
         indx = len(a) - 1 - j
-        _circ.add(qibo.gates.CNOT(a[indx-1], a[indx]))
+        _circ.add(gates.CNOT(a[indx-1], a[indx]))
+    _circ.add(gates.X(q))
 
     # Block 3
-    _circ.add(qibo.gates.CNOT(b[0], a[1])) # Changed first Toffoli for a CNOT as F[0]=a[0]=1 always
-    for j in range(len(a)-2):
-        _circ.add(qibo.gates.TOFFOLI(b[j+1], a[j+1], a[j+2]))
-    _circ.add(qibo.gates.TOFFOLI(b[N-2], a[N-2], b[N-1]))
+    _circ.add(gates.CNOT(b[0], q))
+    if N == 4:
+        a2_toffoli(b[3])
+    else:
+        a2_toffoli(a[3])
+        for j in range(len(a)-4):
+            _circ.add(gates.TOFFOLI(b[j+3], a[j+3], a[j+4]))
+        _circ.add(gates.TOFFOLI(b[N-2], a[N-2], b[N-1]))
 
     # Block 4
-    _circ.add(qibo.gates.CNOT(a[len(a)-1], b[N-2]))
-    for j in range(len(a)-2): # Changed last Peres gate for a CNOT and a X as F[0]=a[0]=1 always
-        indx = len(a) - 1 - j
-        Peres(_circ, a[indx-1], b[indx-1], a[indx])
-    # Changed last Peres gate for a CNOT and a X as F[2]=a[0]=1 always
-    _circ.add(qibo.gates.CNOT(b[0], a[1]))
-    _circ.add(qibo.gates.X(b[0]))
-    
-    # Block 5
-    for j in range(len(a)-2):
-            _circ.add(qibo.gates.CNOT(a[j+1], a[j+2]))
+    if N == 4:
+        a2_cnot_b2()
+    else:
+        _circ.add(gates.CNOT(a[N-2], b[N-2]))
+        for j in range(len(a)-4):
+            indx = len(a) - 1 - j
+            # Asumiendo que Peres está definida en el contexto del módulo
+            Peres(_circ, a[indx-1], b[indx-1], a[indx])
+        a2_toffoli(a[3])
+        a2_cnot_b2()
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.CNOT(b[0], q))
+    _circ.add(gates.X(b[0]))
+    _circ.add(gates.X(q))
 
-    # Block 6
-    for j in range(len(a)-1):
-            _circ.add(qibo.gates.CNOT(a[j+1], b[j+1]))
+    # Block 5
+    for j in range(len(a)-3):
+        _circ.add(gates.CNOT(a[j+2], a[j+3]))
+
+    # Block 6 (Inversión exacta y simétrica del Bloque 1 para n+1)
+    for j in reversed(range(len(a)-3)):
+        _circ.add(gates.CNOT(a[j+3], b[j+3]))
+    _circ.add(gates.CNOT(q, b[2]))
+    _circ.add(gates.CNOT(q, b[1]))
+    _circ.add(gates.X(b[1]))
 
     # Undo control operation
     for j in range(N):
-        _circ.add(qibo.gates.CNOT(ctrl, b[j]))
+        _circ.add(gates.CNOT(ctrl, b[j]))
+
 
 def _add_sub(_circ, ctrl, a, b):
     add_sub_no_input_carry(_circ, ctrl, a, b)
@@ -218,8 +249,6 @@ def ctrl_add(_circ, ctrl, a, b):
     # Block 6
     for i in range(len(b)-2):
             _circ.add(qibo.gates.CNOT(a[i+2], b[i+2]))
-
-
 # ----------------------------------------------------------------
 # Non-restoring SQRT steps
 # ----------------------------------------------------------------
@@ -236,7 +265,7 @@ def initial_substraction(_circ, n, allocs): # Phase 1
     _circ.add(qibo.gates.CNOT(R[n-2], R[n-1]))
 
     # Bit inversion for F1 (F2 and F1 are always opposites)
-    invCNOT(_circ, F[2], F[1])
+    #invCNOT(_circ, F[2], F[1])
 
     # Step 4 (j=1 conditional ADD/SUB)
     a = F[:3] # F3 is always 0, so it can be removed => a = [None, F1, F2]
@@ -251,9 +280,9 @@ def conditional_add_sub(_circ, n, it, allocs): # Phase 2 iteration
 
     sign = R[n - it + 1] # Sign will be stored at the top bit in each iteration
     
-    invCNOT(_circ, F[2], F[1]) # Step 1: clear F1
+    #invCNOT(_circ, F[2], F[1]) # Step 1: clear F1
 
-    _circ.add(qibo.gates.CNOT(sign, F[1])) # Step 2: copy value from sign to F1
+    #_circ.add(qibo.gates.CNOT(sign, F[1])) # Step 2: copy value from sign to F1
 
     _circ.add(qibo.gates.X(sign)) # Step 3: prepare actual root bit, opposite to sign
 
@@ -275,7 +304,7 @@ def remainder_restorarion(_circ, n, allocs): # Phase 3
     h = n // 2
     sign = R[h+1] # Sign qubit
 
-    invCNOT(_circ, F[2], F[1]) # Step 1: Clear F1
+    #invCNOT(_circ, F[2], F[1]) # Step 1: Clear F1
 
     # Step 2: CTRL-ADD on the narrowed qubits from n-1 to h+1
     a = F[:h+1]

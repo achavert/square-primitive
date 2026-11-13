@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+src/quantum_squaring/__init__.py
+src/quantum_squaring.egg-info/PKG-INFO
+src/quantum_squaring.egg-info/SOURCES.txt
+src/quantum_squaring.egg-info/dependency_links.txt
+src/quantum_squaring.egg-info/top_level.txt
+src/quantum_squaring/circuits/square_direct_inversion.py
+src/quantum_squaring/circuits/square_direct_inversion_no_anc.py
+src/quantum_squaring/circuits/square_optimized.py
+src/quantum_squaring/circuits/square_qubit_minimized.py
