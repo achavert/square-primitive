@@ -5,18 +5,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import qibo
-import quantum_squaring.circuits.square_optimized as square_optimized
+# import path_to_square as square_primitive
+import quantum_squaring.circuits.square_ancilla_free as square_primitive
 
 qibo.set_backend("qibojit", platform="cupy")
 qibo.set_device("/GPU:0")
 
 
 def run_circ(m, output_file):
-    num_qubits = 2*m + 2 # Must match the circuit qubit requirements
+    num_qubits = 2*m                # Must match the circuit qubit requirements
     start = time.time()
     for x in range(2**m):
-        sq, (R, F) = square_optimized.Square(m, input_swaps = False)
-        circ = square_optimized.initialize_square(x, m, allocs=(R, F), direct=True)
+        sq, (R, F) = square_primitive.Square(m, input_swaps = False)
+        circ = square_primitive.initialize_square(x, m, allocs=(R, F), direct=True)
         circ.add(sq.on_qubits(*range(num_qubits)))
         circ.add(qibo.gates.M(*range(num_qubits)))
 
@@ -41,7 +42,7 @@ if __name__ == "__main__":
 
     results_dir = PROJECT_ROOT / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
-    output_path = results_dir / f"validation_m{m_min}-{m_max}.txt"
+    output_path = results_dir / f"validation_m{m_min}-{m_max}_ancilla_fred.txt"
 
     with output_path.open("w", encoding="utf-8") as output_file:
         for m in range(m_min, m_max+1):

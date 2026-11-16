@@ -8,13 +8,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-circuits = ['direct_inversion', 'optimized']
+circuits = ['direct_inversion', 'ancilla_free']
 exact_counts = {'direct_inversion': {
                     'nqubits': [1.0, 4.0],
                     'X': [1.0, 6.0],
                     'CNOT': [-14.0, 14.0, 7.0],
                     'TOFFOLI': [-3.0, 6.0, 2.0]},
-                'optimized': {
+                'ancilla_free': {
                     'nqubits': [2.0, 2.0],
                     'X': [-1.0, 4.0],
                     'CNOT': [-16.0, 14.5, 3.5],
@@ -28,7 +28,7 @@ gate_labels = ["X", "CNOT", "TOFFOLI"]
 marker = 'x'
 
 
-file = PROJECT_ROOT / "results" / "resources_m2-50.json"
+file = PROJECT_ROOT / "results" / "resources_m3-50_ancilla_free.json"
 
 
 def poly(_x, *a):
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     with open(file, "r") as f:
         results = json.load(f)
 
-    results_dir = PROJECT_ROOT / "results" / "graphs"
+    results_dir = PROJECT_ROOT / "results" / "graphs" / "ancilla_free"
     results_dir.mkdir(parents=True, exist_ok=True)
 
     generate_plot_nqubits(results, results_dir)

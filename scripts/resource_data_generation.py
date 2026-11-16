@@ -6,17 +6,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from collections import Counter
-import quantum_squaring.circuits.square_optimized as square_optimized
+#import quantum_squaring.circuits.square_optimized as square_optimized
+import quantum_squaring.circuits.square_ancilla_free as square_optimized
+
 import quantum_squaring.circuits.square_direct_inversion as square_direct_inversion
 
-circuits = ['direct_inversion', 'optimized']
+circuits = ['direct_inversion', 'ancilla_free']
 
 
 
 def build_circuit(m, name):
     if name == 'direct_inversion':
         _circ, _ = square_direct_inversion.Square(m, input_swaps = False, method = 'ripple_no_input_carry')
-    elif name == 'optimized':
+    elif name == 'ancilla_free':
         _circ, _ = square_optimized.Square(m, input_swaps = False)
     return _circ
 
@@ -24,7 +26,7 @@ results = {name: {"m": [], "nqubits": [], "gates": [], "by_type": [], "depth":[]
 
 
 if __name__ == "__main__":
-    m_min = 2
+    m_min = 3
     m_max = 50
     for name in circuits:
         print(f'Circuit: {name}')
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     results_dir = PROJECT_ROOT / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = results_dir / f"resources_m{m_min}-{m_max}.json"
+    output_path = results_dir / f"resources_m{m_min}-{m_max}_ancilla_free.json"
 
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
