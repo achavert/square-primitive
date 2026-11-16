@@ -24,3 +24,6 @@ pip install -r requirements.txt
 | `scripts/resource_data_generation.py` | Generation of qubit, gate and depth counts for the main proposal and the direct inversion. Sweep of the input length m |
 | `scripts/resource_analysis.py` | Validation of the exact derived counts for the main proposal and the direct inversion circuit's qubit, gate and depth scalings by fitting the experimental data |
 | `scripts/simulation_time_analysis.py` | Evaluation of the GPU simulation time of the main proposal and the direct inversion circuits. Sweep of the input length m |
+|  |  |
+|  |  |
+| `results` | Execution results of the scripts from `scripts` |
