@@ -26,4 +26,4 @@ pip install -r requirements.txt
 | `scripts/simulation_time_analysis.py` | Evaluation of the GPU simulation time of the main proposal and the direct inversion circuits. Sweep of the input length m |
 |  |  |
 |  |  |
-| `results` | Execution results of the scrips from `scripts` |
+| `results` | Execution results of the scripts from `scripts` |
