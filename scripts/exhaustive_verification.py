@@ -1,12 +1,13 @@
 import time
 import sys
+from tqdm import tqdm
 from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import qibo
-# import path_to_square as square_primitive
-import quantum_squaring.circuits.square_ancilla_free as square_primitive
+# import <path_to_square_primitive> as square_primitive
+import quantum_squaring.circuits.square_space_optimize as square_primitive
 
 qibo.set_backend("qibojit", platform="cupy")
 qibo.set_device("/GPU:0")
@@ -15,7 +16,7 @@ qibo.set_device("/GPU:0")
 def run_circ(m, output_file):
     num_qubits = 2*m                # Must match the circuit qubit requirements
     start = time.time()
-    for x in range(2**m):
+    for x in tqdm(range(2**m)):
         sq, (R, F) = square_primitive.Square(m, input_swaps = False)
         circ = square_primitive.initialize_square(x, m, allocs=(R, F), direct=True)
         circ.add(sq.on_qubits(*range(num_qubits)))
@@ -37,12 +38,15 @@ def run_circ(m, output_file):
 
 
 if __name__ == "__main__":
+    # Options
     m_min = 2
     m_max = 10
+    name = 'space_optimized'
+
 
     results_dir = PROJECT_ROOT / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
-    output_path = results_dir / f"validation_m{m_min}-{m_max}_ancilla_fred.txt"
+    output_path = results_dir / f"validation_m{m_min}-{m_max}_{name}.txt"
 
     with output_path.open("w", encoding="utf-8") as output_file:
         for m in range(m_min, m_max+1):

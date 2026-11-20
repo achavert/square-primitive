@@ -8,17 +8,17 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-circuits = ['direct_inversion', 'ancilla_free']
+circuits = ['direct_inversion', 'space_optimized']
 exact_counts = {'direct_inversion': {
                     'nqubits': [1.0, 4.0],
                     'X': [1.0, 6.0],
                     'CNOT': [-14.0, 14.0, 7.0],
                     'TOFFOLI': [-3.0, 6.0, 2.0]},
-                'ancilla_free': {
-                    'nqubits': [2.0, 2.0],
-                    'X': [-1.0, 4.0],
-                    'CNOT': [-16.0, 14.5, 3.5],
-                    'TOFFOLI': [-2.0, 3.0, 1.0]}}
+                'space_optimized': {
+                    'nqubits': [0.0, 2.0],
+                    'X': [-3.0, 3.0],
+                    'CNOT': [7.0, -6.5, 3.5],
+                    'TOFFOLI': [-11.0, 4.0, 1.0]}}
 
 
 data_labels = ["nqubits", "depth"]
@@ -27,8 +27,6 @@ gate_labels = ["X", "CNOT", "TOFFOLI"]
 
 marker = 'x'
 
-
-file = PROJECT_ROOT / "results" / "resources_m3-50_ancilla_free.json"
 
 
 def poly(_x, *a):
@@ -132,10 +130,16 @@ def generate_plot_gate(results, gate, results_dir):
 
 
 if __name__ == "__main__":
+    # Options
+    name = 'resources_m3-50_space_optimized.json'
+
+    file = PROJECT_ROOT / "results" / name
+
+
     with open(file, "r") as f:
         results = json.load(f)
 
-    results_dir = PROJECT_ROOT / "results" / "graphs" / "ancilla_free"
+    results_dir = PROJECT_ROOT / "results" / "graphs" / "space_optimized"
     results_dir.mkdir(parents=True, exist_ok=True)
 
     generate_plot_nqubits(results, results_dir)

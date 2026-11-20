@@ -4,7 +4,7 @@ Input: 0 | Result: 0 = [0 0 0 0] | res==x^2 True
 Input: 1 | Result: 1 = [1 0 0 0] | res==x^2 True
 Input: 2 | Result: 4 = [0 0 1 0] | res==x^2 True
 Input: 3 | Result: 9 = [1 0 0 1] | res==x^2 True
-Mean elapsed time: 0.1216 s
+Mean elapsed time: 0.0573 s
 
 ====================================
 Input: m=3 bits
@@ -16,7 +16,7 @@ Input: 4 | Result: 16 = [0 0 0 0 1 0] | res==x^2 True
 Input: 5 | Result: 25 = [1 0 0 1 1 0] | res==x^2 True
 Input: 6 | Result: 36 = [0 0 1 0 0 1] | res==x^2 True
 Input: 7 | Result: 49 = [1 0 0 0 1 1] | res==x^2 True
-Mean elapsed time: 0.0211 s
+Mean elapsed time: 0.0175 s
 
 ====================================
 Input: m=4 bits
@@ -36,7 +36,7 @@ Input: 12 | Result: 144 = [0 0 0 0 1 0 0 1] | res==x^2 True
 Input: 13 | Result: 169 = [1 0 0 1 0 1 0 1] | res==x^2 True
 Input: 14 | Result: 196 = [0 0 1 0 0 0 1 1] | res==x^2 True
 Input: 15 | Result: 225 = [1 0 0 0 0 1 1 1] | res==x^2 True
-Mean elapsed time: 0.0228 s
+Mean elapsed time: 0.0121 s
 
 ====================================
 Input: m=5 bits
@@ -72,7 +72,7 @@ Input: 28 | Result: 784 = [0 0 0 0 1 0 0 0 1 1] | res==x^2 True
 Input: 29 | Result: 841 = [1 0 0 1 0 0 1 0 1 1] | res==x^2 True
 Input: 30 | Result: 900 = [0 0 1 0 0 0 0 1 1 1] | res==x^2 True
 Input: 31 | Result: 961 = [1 0 0 0 0 0 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.0286 s
+Mean elapsed time: 0.0197 s
 
 ====================================
 Input: m=6 bits
@@ -140,7 +140,7 @@ Input: 60 | Result: 3600 = [0 0 0 0 1 0 0 0 0 1 1 1] | res==x^2 True
 Input: 61 | Result: 3721 = [1 0 0 1 0 0 0 1 0 1 1 1] | res==x^2 True
 Input: 62 | Result: 3844 = [0 0 1 0 0 0 0 0 1 1 1 1] | res==x^2 True
 Input: 63 | Result: 3969 = [1 0 0 0 0 0 0 1 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.0398 s
+Mean elapsed time: 0.0262 s
 
 ====================================
 Input: m=7 bits
@@ -272,7 +272,7 @@ Input: 124 | Result: 15376 = [0 0 0 0 1 0 0 0 0 0 1 1 1 1] | res==x^2 True
 Input: 125 | Result: 15625 = [1 0 0 1 0 0 0 0 1 0 1 1 1 1] | res==x^2 True
 Input: 126 | Result: 15876 = [0 0 1 0 0 0 0 0 0 1 1 1 1 1] | res==x^2 True
 Input: 127 | Result: 16129 = [1 0 0 0 0 0 0 0 1 1 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.0526 s
+Mean elapsed time: 0.0366 s
 
 ====================================
 Input: m=8 bits
@@ -532,7 +532,7 @@ Input: 252 | Result: 63504 = [0 0 0 0 1 0 0 0 0 0 0 1 1 1 1 1] | res==x^2 True
 Input: 253 | Result: 64009 = [1 0 0 1 0 0 0 0 0 1 0 1 1 1 1 1] | res==x^2 True
 Input: 254 | Result: 64516 = [0 0 1 0 0 0 0 0 0 0 1 1 1 1 1 1] | res==x^2 True
 Input: 255 | Result: 65025 = [1 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.0760 s
+Mean elapsed time: 0.0479 s
 
 ====================================
 Input: m=9 bits
@@ -1048,7 +1048,7 @@ Input: 508 | Result: 258064 = [0 0 0 0 1 0 0 0 0 0 0 0 1 1 1 1 1 1] | res==x^2 T
 Input: 509 | Result: 259081 = [1 0 0 1 0 0 0 0 0 0 1 0 1 1 1 1 1 1] | res==x^2 True
 Input: 510 | Result: 260100 = [0 0 1 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1] | res==x^2 True
 Input: 511 | Result: 261121 = [1 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.1050 s
+Mean elapsed time: 0.0685 s
 
 ====================================
 Input: m=10 bits
@@ -2076,5 +2076,5 @@ Input: 1020 | Result: 1040400 = [0 0 0 0 1 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1] | res=
 Input: 1021 | Result: 1042441 = [1 0 0 1 0 0 0 0 0 0 0 1 0 1 1 1 1 1 1 1] | res==x^2 True
 Input: 1022 | Result: 1044484 = [0 0 1 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1] | res==x^2 True
 Input: 1023 | Result: 1046529 = [1 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1] | res==x^2 True
-Mean elapsed time: 0.1693 s
+Mean elapsed time: 0.1168 s
 

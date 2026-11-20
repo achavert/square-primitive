@@ -8,7 +8,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-import quantum_squaring.circuits.square_optimized as square_optimized
+import quantum_squaring.circuits.square_2n_2 as square_2n_2
 import quantum_squaring.circuits.square_direct_inversion as square_direct_inversion
 
 circuits = ['direct_inversion', 'optimized']
@@ -17,7 +17,7 @@ def build_circuit(m, name):
     if name == 'direct_inversion':
         _circ, _ = square_direct_inversion.Square(m, input_swaps = False, method = 'ripple_no_input_carry')
     elif name == 'optimized':
-        _circ, _ = square_optimized.Square(m, input_swaps = False)
+        _circ, _ = square_2n_2.Square(m, input_swaps = False)
     return _circ
 
 results = {name: {"m": [], "t": [], "t_dt": []} for name in circuits}
